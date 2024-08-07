@@ -19,13 +19,17 @@ export class BotService {
   }
 
   async addNewUser(user: CreateUserDto) {
-    const isUserExist = await this.usersService.findById(user.id);
+    try {
+      const isUserExist = await this.usersService.findById(user.id);
 
-    if (isUserExist) {
-      return;
+      if (isUserExist) {
+        return;
+      }
+
+      return await this.usersService.create(user);
+    } catch (error) {
+      return await this.usersService.create(user);
     }
-
-    return await this.usersService.create(user);
   }
 
   async checkUserIsAdmin(user: User) {
