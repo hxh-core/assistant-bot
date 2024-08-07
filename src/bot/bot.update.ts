@@ -1,18 +1,11 @@
 import type { CreateUserDto } from '@/crud/users/dto';
 import { UsersService } from '@/crud/users/users.service';
-import { BotScenes } from '@/lib/common';
-import {
-  Action,
-  Command,
-  Ctx,
-  Hears,
-  InjectBot,
-  Start,
-  Update,
-} from 'nestjs-telegraf';
+import { BotNavigation, BotRoutes } from '@/lib/common';
+import { Action, Ctx, InjectBot, Start, Update } from 'nestjs-telegraf';
 import { Context, Telegraf } from 'telegraf';
 import { SceneContext } from 'telegraf/scenes';
 import { BotService } from './bot.service';
+import { servicesKeyboard } from './keyboard';
 
 @Update()
 export class BotUpdate {
@@ -23,10 +16,8 @@ export class BotUpdate {
   ) {}
 
   @Start()
-  @Command('/start')
-  @Action('start')
   async start(@Ctx() ctx: SceneContext) {
-    const user: CreateUserDto = {
+    const newUser: CreateUserDto = {
       firstName: ctx.from.first_name,
       lastName: ctx.from.last_name,
       username: ctx.from.username,
@@ -39,32 +30,29 @@ export class BotUpdate {
       },
     };
 
-    await this.botService.addNewUser(user);
-    const sceneProps = BotScenes.user.menu();
-    await ctx.scene.enter(sceneProps.sceneId, sceneProps.initialState);
+    const user = await this.botService.addNewUser(newUser);
+
+    await ctx.reply('Главное меню', {
+      reply_markup: servicesKeyboard(user),
+    });
+
     return;
   }
 
-  @Hears('/menu')
-  @Command('/menu')
-  async menu(@Ctx() ctx: SceneContext) {
-    const sceneProps = BotScenes.user.menu();
-    await ctx.scene.enter(sceneProps.sceneId, sceneProps.initialState);
+  @Action(BotRoutes.user.site.choose.value)
+  async sites(@Ctx() ctx: SceneContext) {
+    await ctx.scene.enter(BotNavigation.user.scenes.site.choose.enter, {
+      firstMessage: 'edit',
+    });
     return;
   }
 
-  @Hears('/users')
-  @Command('/users')
-  async users(@Ctx() ctx: SceneContext) {
-    const isUserAdmin = await this.botService.checkUserIsAdmin(ctx.from);
-
-    if (!isUserAdmin) {
-      return;
-    }
-
-    const users = await this.usersService.findAll();
-    // TODO: доделать
-    console.log(users);
+  @Action(BotRoutes.user.settings.value)
+  async settings(@Ctx() ctx: SceneContext) {
+    await ctx.scene.leave();
+    await ctx.scene.enter(BotNavigation.user.scenes.settings.enter, {
+      firstMessage: 'edit',
+    });
     return;
   }
 }

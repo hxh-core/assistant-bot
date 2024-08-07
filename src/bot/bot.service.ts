@@ -23,7 +23,7 @@ export class BotService {
       const isUserExist = await this.usersService.findById(user.id);
 
       if (isUserExist) {
-        return;
+        return isUserExist;
       }
 
       return await this.usersService.create(user);

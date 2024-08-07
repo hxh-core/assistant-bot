@@ -66,10 +66,22 @@ export class SettingsScene {
         },
       },
     );
-    await ctx.reply(message, {
-      parse_mode: 'HTML',
-      reply_markup: userSettingsKeyboard(newUser),
-    });
+
+    this.user = newUser;
+    await ctx
+      .editMessageText(message, {
+        parse_mode: 'HTML',
+        reply_markup: userSettingsKeyboard(newUser),
+      })
+      .catch(() => {
+        ctx.reply(
+          `${emojis.warning} Произошла ошибка, попробуйте еще раз позже.\n\n${message}`,
+          {
+            parse_mode: 'HTML',
+            reply_markup: userSettingsKeyboard(newUser),
+          },
+        );
+      });
 
     ctx.wizard.next();
     return;
